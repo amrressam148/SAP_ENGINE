@@ -1,7 +1,0 @@
-streamlit
-langchain
-langchain-core
-langchain-chroma
-langchain-google-genai
-google-generativeai
-langchain-community
