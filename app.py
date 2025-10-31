@@ -1,23 +1,25 @@
 import streamlit as st
+import os
+
+# --- (الخطوة 1: ظبط الـ API Key في البيئة "Environment") ---
+# ده "لازم" يكون أول حاجة خالص، قبل أي import تاني
+# عشان "vector.py" يلاقيه لما يشتغل
+try:
+    os.environ["GOOGLE_API_KEY"] = st.secrets["GOOGLE_API_KEY"]
+except:
+    st.error("GOOGLE_API_KEY not found in Streamlit Secrets!", icon="🚨")
+    st.stop()
+
+# --- (الخطوة 2: باقي الـ Imports) ---
+# (دلوقتي لما نستدعي vector، هو هيلاقي الـ Key جاهز)
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.prompts import ChatPromptTemplate
 from vector import retriever 
-import os 
 
-# --- (الخطوة 1: ظبط الصفحة الأول - ده لازم يكون أول أمر) ---
+# --- (الخطوة 3: ظبط الصفحة) ---
 st.set_page_config(page_title="Signavio Sage", page_icon="🤖")
 
-# --- (الخطوة 2: ظبط الـ API Key) ---
-# (لازم يتأكد إن الـ Key موجود قبل ما يحمل الموديل)
-if "GOOGLE_API_KEY" not in os.environ:
-    try:
-        # (هنا بيقرأ الـ Secret اللي إنت حطيته في Streamlit Cloud)
-        os.environ["GOOGLE_API_KEY"] = st.secrets["GOOGLE_API_KEY"]
-    except:
-        st.error("GOOGLE_API_KEY not found in Streamlit Secrets!", icon="🚨")
-        st.stop()
-
-# --- (الخطوة 3: تحميل الموديل والـ Chain) ---
+# --- (الخطوة 4: تحميل الموديل والـ Chain) ---
 @st.cache_resource
 def load_model_chain():
     """
@@ -44,7 +46,6 @@ def load_model_chain():
     chain = prompt | model
     return chain
 
-# (هنا بنحمل الموديل ونطبع الرسالة)
 try:
     chain = load_model_chain()
     st.success("Google Gemini model loaded successfully!") 
@@ -52,31 +53,26 @@ except Exception as e:
     st.error(f"Error loading model: {e}")
     st.stop()
 
-# --- (الخطوة 4: باقي الـ GUI بتاعك) ---
+# --- (الخطوة 5: باقي الـ GUI بتاعك - زي ما هو بالظبط) ---
 st.title("🤖 Signavio Sage Assistant")
 st.info("Ask me anything... (Powered by Google Gemini & RAG)")
 
-# (الـ Select Box بتاع الـ Permissions)
 st.subheader("Demo: User Permission Simulation")
 user_role = st.selectbox(
     "Select your role to test permissions:",
     ("Sales (Public Access)", "Product Team (Internal Access)")
 )
 
-# (الـ Expander بتاع الـ Context)
 with st.expander("Show Retrieved Context (For Demo Purposes)"):
     show_context = st.toggle("Toggle to see the context", value=False)
 
-# (تهيئة الشات)
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-# (عرض الشات القديم)
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
 
-# (ده الـ input box اللي كان ناقص!)
 if question := st.chat_input("What is our roadmapping process?"):
 
     st.session_state.messages.append({"role": "user", "content": question})
@@ -94,7 +90,6 @@ if question := st.chat_input("What is our roadmapping process?"):
                 st.json([doc.to_json() for doc in context])
                 st.write("---")
 
-            # (الـ Logic بتاع الـ Permissions)
             is_sensitive = False
             for doc in context:
                 if 'project_phoenix.md' in doc.metadata.get('source', ''):
@@ -105,7 +100,7 @@ if question := st.chat_input("What is our roadmapping process?"):
                 result = "I'm sorry, I cannot answer this question as it contains information restricted to the Product Team only."
             else:
                 result_obj = chain.invoke({"context": context, "question": question})
-                result = result_obj.content # (لازم نزود .content عشان نجيب الـ string)
+                result = result_obj.content 
 
             st.markdown(result)
             st.session_state.messages.append({"role": "assistant", "content": result})
