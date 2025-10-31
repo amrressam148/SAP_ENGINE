@@ -1,7 +1,7 @@
 streamlit
-langchain-google-genai
+ollama
+langchain
 langchain-chroma
 langchain-community
 langchain-text-splitters
 unstructured[md]
-google-generativeai
