@@ -6,4 +6,4 @@ google-generativeai
 langchain-community
 langchain-core
 pydantic
-pydantic-settings
+pydantic_core
