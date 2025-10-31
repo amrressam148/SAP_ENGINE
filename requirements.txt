@@ -4,5 +4,5 @@ langchain-chroma
 langchain-google-genai
 google-generativeai
 langchain-community
-langchain-core
 pydantic<3,>=1.10.0
+langchain-core==0.1.27
